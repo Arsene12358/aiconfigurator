@@ -118,29 +118,25 @@ def get_moe_test_cases():
     #[2048,1408,4,60], #qwen1.5_moe
     #[2048,1408,6,64], #deepseekv1_moe
     #[5120,1536,6,160], #deepseekv2    
-    # model_config_list=[[4096,14336,2,8,'MOE_Mixtral8x7B'],# mixtral_8x7b
-    #               [6144,16384,2,8,'MOE_Mixtral8x22B'],# mixtral_8x22b
-    #               [7168,2048,8,256,'DEEPSEEK_V3'], # deepseekv3, will have 1 shared expert
-    #               [4096,1536,8,128, 'QWEN3_235B'], # qwen3-moe, 235b-a22b
-    #               [6144,2560,8,160, 'QWEN3_480B'], # qwen3-moe, 480b-a35b
-    #               [7168,2048,8,384, 'KIMI_K2'], # kimi k2
-    #               [2880,2880*2,4,128,'GPT_OSS_120B'],
-    #               [2880,2880*2,4,32,'GPT_OSS_20B']
-    #               ]
-    model_config_list = [
+    model_config_list=[[4096,14336,2,8,'MOE_Mixtral8x7B'],# mixtral_8x7b
+                  [6144,16384,2,8,'MOE_Mixtral8x22B'],# mixtral_8x22b
+                  [7168,2048,8,256,'DEEPSEEK_V3'], # deepseekv3, will have 1 shared expert
+                  [4096,1536,8,128, 'QWEN3_235B'], # qwen3-moe, 235b-a22b
+                  [6144,2560,8,160, 'QWEN3_480B'], # qwen3-moe, 480b-a35b
+                  [7168,2048,8,384, 'KIMI_K2'], # kimi k2
                   [2880,2880,4,128,'GPT_OSS_120B'],
                   [2880,2880,4,32,'GPT_OSS_20B']
-    ]
-    moe_list=['w4a16_mxfp4']
-    # moe_list=['float16']
-
-    # if getSMVersion() > 86:
-    #     moe_list += ['fp8']
-    #     if getSMVersion() < 100:
-    #        moe_list += ['w4afp8', 'fp8_block', 'w4a16_mxfp4'] # though trtllm gen kernel source supports fp8_block, it only provides min-latency data. not practical
+                  ]
     
-    # if getSMVersion() >= 100:
-    #     moe_list += ['nvfp4']
+    moe_list=['float16']
+
+    if getSMVersion() > 86:
+        moe_list += ['fp8']
+        if getSMVersion() < 100:
+           moe_list += ['w4afp8', 'fp8_block', 'w4a16_mxfp4'] # though trtllm gen kernel source supports fp8_block, it only provides min-latency data. not practical
+    
+    if getSMVersion() >= 100:
+        moe_list += ['nvfp4']
 
     test_cases=[]
 
@@ -149,6 +145,13 @@ def get_moe_test_cases():
         for moe_type in moe_list:
             for model_config in model_config_list:
                 hs,inter_s,topk, num_experts, model_name = model_config
+                if model_name in ['GPT_OSS_20B','GPT_OSS_120B']:
+                    if moe_type != 'w4a16_mxfp4':
+                        continue
+                else:
+                    if moe_type == 'w4a16_mxfp4':
+                        print('passed')
+                        continue
                 for tp in tp_list:
                     for ep in ep_list:
                         if tp*ep != num_gpu:

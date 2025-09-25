@@ -83,7 +83,7 @@ def collect_module_safe(module_name, test_type, get_test_cases_func, run_func, n
         }]
 
 def worker(queue, device_id: int, func, progress_value, lock, error_queue=None, module_name="unknown"):
-    """Enhanced worker with automatic logging setup"""
+    """worker with automatic logging setup"""
 
     # Setup logging for this worker - reads config from environment automatically
     worker_logger = setup_logging(worker_id=device_id)
@@ -141,7 +141,7 @@ def worker(queue, device_id: int, func, progress_value, lock, error_queue=None, 
                 handler.flush()
 
 def parallel_run(tasks, func, num_processes, module_name="unknown"):
-    """Enhanced parallel runner with error collection"""
+    """parallel runner with error collection"""
     queue = mp.Queue()
     error_queue = mp.Queue()
     processes = []
@@ -407,8 +407,9 @@ def collect_trtllm(num_processes: int, ops: List[str]=None):
                     continue
             else:
                 module_name = collection['module']
-            
-            get_module = __import__(module_name if collection['module'] else collection['module'], 
+            print(module_name)
+            # if collection['module'] else collection['module']
+            get_module = __import__(module_name, 
                                     fromlist=[collection['get_func']])
             # print(get_module)
             run_module = __import__(module_name, fromlist=[collection['run_func']])
