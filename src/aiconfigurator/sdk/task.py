@@ -579,6 +579,7 @@ class TaskConfig:
         profiles: list[str] | None = None,
         yaml_config: dict | None = None,
         database_mode: str | None = None,
+        max_concurrency: int | None = None,
     ) -> None:
         """
         Initialize a TaskConfig object.
@@ -607,6 +608,7 @@ class TaskConfig:
             total_gpus: The total number of GPUs.
             profiles: The profiles to use.
             yaml_config: The YAML configuration.
+            max_concurrency: Maximum concurrency level (batch size) for the sweep.
         """
         self.serving_mode = serving_mode
         self.model_path = model_path
@@ -657,6 +659,7 @@ class TaskConfig:
         self.config, applied_layers = TaskConfigFactory.create(ctx)
         self.config.applied_layers = applied_layers
         self.config.database_mode = database_mode  # Store in config for TaskRunner access
+        self.config.max_concurrency = max_concurrency
 
         self.serving_mode = serving_mode
         self.model_path = model_path
@@ -1067,7 +1070,9 @@ class TaskRunner:
                 task_config.worker_config.backend_version,
             )
             return None
-        logger.info("Task %s: Running agg pareto", task_config.task_name)
+        max_concurrency = getattr(task_config, "max_concurrency", None)
+        max_batch_size = max_concurrency if max_concurrency is not None else 512
+        logger.info("Task %s: Running agg pareto (max_batch_size=%d)", task_config.task_name, max_batch_size)
         result_df = pa.agg_pareto(
             model_path=task_config.model_path,
             runtime_config=runtime_config,
@@ -1075,6 +1080,7 @@ class TaskRunner:
             backend_name=task_config.worker_config.backend_name,
             model_config=model_config,
             parallel_config_list=parallel_config_list,
+            max_batch_size=max_batch_size,
         )
         return {
             "pareto_df": result_df,
@@ -1219,7 +1225,16 @@ class TaskRunner:
                 "sizes will be filtered out. "
             )
 
-        logger.info("Task %s: Running disagg pareto", task_config.task_name)
+        max_concurrency = getattr(task_config, "max_concurrency", None)
+        decode_max_num_tokens = task_config.advanced_tuning_config.decode_max_batch_size
+        if max_concurrency is not None:
+            decode_max_num_tokens = min(decode_max_num_tokens, max_concurrency)
+
+        logger.info(
+            "Task %s: Running disagg pareto (decode_max_num_tokens=%d)",
+            task_config.task_name,
+            decode_max_num_tokens,
+        )
         result_df = pa.disagg_pareto(
             model_path=task_config.model_path,
             runtime_config=runtime_config,
@@ -1237,7 +1252,7 @@ class TaskRunner:
             decode_max_num_worker=task_config.replica_config.max_decode_worker,
             prefill_max_num_tokens=task_config.advanced_tuning_config.prefill_max_batch_size
             * task_config.runtime_config.isl,
-            decode_max_num_tokens=task_config.advanced_tuning_config.decode_max_batch_size,
+            decode_max_num_tokens=decode_max_num_tokens,
             prefill_latency_correction_scale=task_config.advanced_tuning_config.prefill_latency_correction_scale,
             decode_latency_correction_scale=task_config.advanced_tuning_config.decode_latency_correction_scale,
             require_same_tp=require_same_tp,

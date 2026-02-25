@@ -28,6 +28,7 @@ def agg_pareto(
     backend_name: str,
     model_config: config.ModelConfig,
     parallel_config_list: list[list[int]],
+    max_batch_size: int = 512,
 ) -> pd.DataFrame:
     """
     Find Pareto front for agg.
@@ -42,6 +43,7 @@ def agg_pareto(
         backend_name: name of the backend
         model_config: model config
         parallel_config_list: list of parallel configurations
+        max_batch_size: maximum batch size (concurrency) to explore. Default: 512.
 
     Returns:
         results_df: dataframe of the results
@@ -107,7 +109,7 @@ def agg_pareto(
                 summary = sess.find_best_agg_result_under_constraints(
                     runtime_config=overwritten_runtime_config,
                     top_k=10,
-                    max_batch_size=512,
+                    max_batch_size=max_batch_size,
                     ctx_stride=512,
                 )
                 if not summary.check_oom():
