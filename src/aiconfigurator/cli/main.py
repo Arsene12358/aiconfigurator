@@ -144,6 +144,12 @@ def _add_default_mode_arguments(parser):
         help="Optional end-to-end request latency target (ms). Enables request-latency optimization mode.",
     )
     parser.add_argument("--prefix", type=int, default=0, help="Prefix cache length. Default to 0.")
+    parser.add_argument(
+        "--max-concurrency",
+        type=int,
+        default=None,
+        help="Maximum concurrency level. Filters out configurations whose concurrency exceeds this value.",
+    )
 
 
 def _add_experiments_mode_arguments(parser):
@@ -818,6 +824,7 @@ def _execute_task_configs(
     target_request_rate: float | None = None,
     target_concurrency: float | None = None,
     max_total_gpus: int | None = None,
+    max_concurrency: int | None = None,
 ) -> tuple[str, dict[str, pd.DataFrame], dict[str, pd.DataFrame], dict[str, float], dict[str, dict[str, float]]]:
     """
     Execute task configs and return the chosen experiment, best configs, results, best
@@ -832,6 +839,8 @@ def _execute_task_configs(
         target_concurrency: If set, activates load-match picking (minimize
             GPUs for the given number of concurrent requests).
         max_total_gpus: Optional upper bound on total GPUs for load-match.
+        max_concurrency: If set, filters out configurations whose concurrency
+            exceeds this value.
 
     Returns:
         tuple:
@@ -855,6 +864,17 @@ def _execute_task_configs(
             logger.info("Task config: %s", task_config.pretty())
             task_result = runner.run(task_config)
             pareto_df = task_result["pareto_df"]
+            if max_concurrency is not None and pareto_df is not None and not pareto_df.empty:
+                pre_filter_count = len(pareto_df)
+                pareto_df = pareto_df[pareto_df["concurrency"] <= max_concurrency]
+                task_result["pareto_df"] = pareto_df
+                logger.info(
+                    "max_concurrency=%d: filtered %d → %d configurations for %s",
+                    max_concurrency,
+                    pre_filter_count,
+                    len(pareto_df),
+                    exp_name,
+                )
             if pareto_df is not None and not pareto_df.empty:
                 results[exp_name] = task_result
                 logger.info("Experiment %s completed with %d results.", exp_name, len(pareto_df))
@@ -1352,6 +1372,7 @@ def main(args):
         task_configs,
         args.mode,
         top_n=args.top_n,
+        max_concurrency=getattr(args, "max_concurrency", None),
     )
 
     if args.save_dir:

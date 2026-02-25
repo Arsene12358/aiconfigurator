@@ -103,10 +103,11 @@ def _execute_and_wrap_result(
     task_configs: dict[str, TaskConfig],
     mode: str,
     top_n: int = 5,
+    max_concurrency: int | None = None,
 ) -> CLIResult:
     """Execute task configs using main.py's function and wrap result in CLIResult."""
     chosen_exp, best_configs, pareto_fronts, best_throughputs, best_latencies = _execute_task_configs_internal(
-        task_configs, mode, top_n=top_n
+        task_configs, mode, top_n=top_n, max_concurrency=max_concurrency
     )
 
     return CLIResult(
@@ -137,6 +138,7 @@ def cli_default(
     prefix: int = 0,
     top_n: int = 5,
     save_dir: str | None = None,
+    max_concurrency: int | None = None,
 ) -> CLIResult:
     """
     Run the default CLI mode: compare aggregated vs disaggregated serving.
@@ -163,6 +165,8 @@ def cli_default(
         prefix: Prefix cache length. Default is 0.
         top_n: Number of top configurations to return for each mode (agg/disagg). Default is 5.
         save_dir: Directory to save results. If None, results are not saved to disk.
+        max_concurrency: Maximum concurrency level. Filters out configurations whose
+            concurrency exceeds this value. Default is None (no limit).
 
     Returns:
         CLIResult with chosen experiment, best configs, pareto fronts, and throughputs.
@@ -207,7 +211,7 @@ def cli_default(
         prefix=prefix,
     )
 
-    result = _execute_and_wrap_result(task_configs, mode="default", top_n=top_n)
+    result = _execute_and_wrap_result(task_configs, mode="default", top_n=top_n, max_concurrency=max_concurrency)
 
     if save_dir:
         # Create a mock args object for save_results compatibility

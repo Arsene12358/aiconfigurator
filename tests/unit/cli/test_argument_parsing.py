@@ -267,3 +267,28 @@ class TestCLIArgumentParsing:
         action = next(action for action in default_parser._actions if action.dest == "database_mode")
         expected_choices = [mode.name for mode in common.DatabaseMode if mode != common.DatabaseMode.SOL_FULL]
         assert sorted(action.choices) == sorted(expected_choices)
+
+    def test_max_concurrency_default_is_none(self, cli_parser):
+        """Test that max_concurrency defaults to None when not provided."""
+        args = cli_parser.parse_args(
+            ["default", "--model-path", "Qwen/Qwen3-32B", "--total-gpus", "8", "--system", "h200_sxm"]
+        )
+        assert args.max_concurrency is None
+
+    def test_max_concurrency_set(self, cli_parser):
+        """Test that max_concurrency can be set via --max-concurrency."""
+        args = cli_parser.parse_args(
+            [
+                "default",
+                "--model-path",
+                "Qwen/Qwen3-32B",
+                "--total-gpus",
+                "8",
+                "--system",
+                "h200_sxm",
+                "--max-concurrency",
+                "64",
+            ]
+        )
+        assert args.max_concurrency == 64
+        assert isinstance(args.max_concurrency, int)
