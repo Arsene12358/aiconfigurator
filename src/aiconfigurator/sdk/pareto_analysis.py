@@ -28,6 +28,7 @@ def agg_pareto(
     backend_name: str,
     model_config: config.ModelConfig,
     parallel_config_list: list[list[int]],
+    max_batch_size: int | None = None,
 ) -> pd.DataFrame:
     """
     Find Pareto front for agg.
@@ -42,6 +43,7 @@ def agg_pareto(
         backend_name: name of the backend
         model_config: model config
         parallel_config_list: list of parallel configurations
+        max_batch_size: maximum batch size (concurrency) to sweep. None uses the backend default.
 
     Returns:
         results_df: dataframe of the results
@@ -104,11 +106,14 @@ def agg_pareto(
                 continue
 
             for overwritten_runtime_config in runtime_configs_to_evaluate:
+                sweep_kwargs = {"top_k": 10, "ctx_stride": 512}
+                if max_batch_size is not None:
+                    sweep_kwargs["max_batch_size"] = max_batch_size
+                else:
+                    sweep_kwargs["max_batch_size"] = 512
                 summary = sess.find_best_agg_result_under_constraints(
                     runtime_config=overwritten_runtime_config,
-                    top_k=10,
-                    max_batch_size=512,
-                    ctx_stride=512,
+                    **sweep_kwargs,
                 )
                 if not summary.check_oom():
                     all_configs_oom = False
