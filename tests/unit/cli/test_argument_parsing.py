@@ -118,6 +118,7 @@ class TestCLIArgumentParsing:
         assert args.tpot == 30.0
         assert args.request_latency is None
         assert args.prefix == 0
+        assert args.max_concurrency is None
 
     def test_debug_mode_flag(self, cli_parser):
         """Test that debug mode can be enabled."""
@@ -267,3 +268,46 @@ class TestCLIArgumentParsing:
         action = next(action for action in default_parser._actions if action.dest == "database_mode")
         expected_choices = [mode.name for mode in common.DatabaseMode if mode != common.DatabaseMode.SOL_FULL]
         assert sorted(action.choices) == sorted(expected_choices)
+
+    def test_max_concurrency_default_is_none(self, cli_parser):
+        """Test that --max-concurrency defaults to None when omitted."""
+        args = cli_parser.parse_args(
+            ["default", "--model-path", "Qwen/Qwen3-32B", "--total-gpus", "8", "--system", "h200_sxm"]
+        )
+        assert args.max_concurrency is None
+
+    def test_max_concurrency_accepts_integer_value(self, cli_parser):
+        """Test that --max-concurrency accepts an integer value."""
+        args = cli_parser.parse_args(
+            [
+                "default",
+                "--model-path",
+                "Qwen/Qwen3-32B",
+                "--total-gpus",
+                "8",
+                "--system",
+                "h200_sxm",
+                "--max-concurrency",
+                "64",
+            ]
+        )
+        assert args.max_concurrency == 64
+        assert isinstance(args.max_concurrency, int)
+
+    @pytest.mark.parametrize("value", ["128", "1", "256", "512"])
+    def test_max_concurrency_various_values(self, cli_parser, value):
+        """Test that --max-concurrency accepts various positive integer values."""
+        args = cli_parser.parse_args(
+            [
+                "default",
+                "--model-path",
+                "Qwen/Qwen3-32B",
+                "--total-gpus",
+                "8",
+                "--system",
+                "h200_sxm",
+                "--max-concurrency",
+                value,
+            ]
+        )
+        assert args.max_concurrency == int(value)

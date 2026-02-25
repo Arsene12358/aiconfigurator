@@ -135,6 +135,7 @@ def cli_default(
     tpot: float = 30.0,
     request_latency: float | None = None,
     prefix: int = 0,
+    max_concurrency: int | None = None,
     top_n: int = 5,
     save_dir: str | None = None,
 ) -> CLIResult:
@@ -161,6 +162,9 @@ def cli_default(
         request_latency: Optional end-to-end request latency target (ms).
             Enables request-latency optimization mode.
         prefix: Prefix cache length. Default is 0.
+        max_concurrency: Maximum concurrency (batch size) to explore during search.
+            Caps the max batch size for agg mode and decode_max_batch_size for disagg mode.
+            Default is None (uses internal default of 512).
         top_n: Number of top configurations to return for each mode (agg/disagg). Default is 5.
         save_dir: Directory to save results. If None, results are not saved to disk.
 
@@ -205,6 +209,7 @@ def cli_default(
         tpot=tpot,
         request_latency=request_latency,
         prefix=prefix,
+        max_concurrency=max_concurrency,
     )
 
     result = _execute_and_wrap_result(task_configs, mode="default", top_n=top_n)

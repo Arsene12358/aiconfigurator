@@ -248,3 +248,32 @@ class TestBuildDefaultTaskConfigs:
         assert "disagg" in result
         # TaskConfig should be called twice (agg + disagg)
         assert mock_task_config.call_count == 2
+
+    @patch("aiconfigurator.cli.main.TaskConfig")
+    def test_max_concurrency_propagates_to_task_config(self, mock_task_config):
+        """max_concurrency should be forwarded to every TaskConfig constructor call."""
+        mock_task_config.return_value = MagicMock(name="MockTaskConfig")
+
+        build_default_task_configs(
+            model_path="Qwen/Qwen3-32B",
+            total_gpus=8,
+            system="h200_sxm",
+            max_concurrency=64,
+        )
+
+        for call_args in mock_task_config.call_args_list:
+            assert call_args.kwargs.get("max_concurrency") == 64
+
+    @patch("aiconfigurator.cli.main.TaskConfig")
+    def test_max_concurrency_none_by_default(self, mock_task_config):
+        """max_concurrency should default to None when not specified."""
+        mock_task_config.return_value = MagicMock(name="MockTaskConfig")
+
+        build_default_task_configs(
+            model_path="Qwen/Qwen3-32B",
+            total_gpus=8,
+            system="h200_sxm",
+        )
+
+        for call_args in mock_task_config.call_args_list:
+            assert call_args.kwargs.get("max_concurrency") is None
