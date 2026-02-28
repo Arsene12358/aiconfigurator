@@ -2408,6 +2408,10 @@ class PerfDatabase:
                 "wideep_context_mla": list(wideep_context_mla_modes),
                 "wideep_generation_mla": list(wideep_generation_mla_modes),
             }
+            # `w4a16_mxfp4` (GPT-OSS native) has compute=1 like float16; reuse float16 MoE perf tables.
+            moe_modes = self.supported_quant_mode.get("moe", []) or []
+            if common.MoEQuantMode.float16.name in moe_modes and common.MoEQuantMode.w4a16_mxfp4.name not in moe_modes:
+                moe_modes.append(common.MoEQuantMode.w4a16_mxfp4.name)
         elif self.backend == "trtllm":
             self.supported_quant_mode = {
                 "gemm": _enum_key_names(getattr(self, "_gemm_data", None)),
@@ -2423,6 +2427,10 @@ class PerfDatabase:
             gemm_modes = self.supported_quant_mode.get("gemm", []) or []
             if common.GEMMQuantMode.fp8.name in gemm_modes and common.GEMMQuantMode.fp8_static.name not in gemm_modes:
                 gemm_modes.append(common.GEMMQuantMode.fp8_static.name)
+            # `w4a16_mxfp4` (GPT-OSS native) has compute=1 like float16; reuse float16 MoE perf tables.
+            moe_modes = self.supported_quant_mode.get("moe", []) or []
+            if common.MoEQuantMode.float16.name in moe_modes and common.MoEQuantMode.w4a16_mxfp4.name not in moe_modes:
+                moe_modes.append(common.MoEQuantMode.w4a16_mxfp4.name)
         elif self.backend == "vllm":  # TODO: deepseek
             self.supported_quant_mode = {
                 "gemm": _enum_key_names(getattr(self, "_gemm_data", None)),
@@ -2434,6 +2442,10 @@ class PerfDatabase:
                 "mla_bmm": [],
                 "moe": _enum_key_names(getattr(self, "_moe_data", None)),
             }
+            # `w4a16_mxfp4` (GPT-OSS native) has compute=1 like float16; reuse float16 MoE perf tables.
+            moe_modes = self.supported_quant_mode.get("moe", []) or []
+            if common.MoEQuantMode.float16.name in moe_modes and common.MoEQuantMode.w4a16_mxfp4.name not in moe_modes:
+                moe_modes.append(common.MoEQuantMode.w4a16_mxfp4.name)
 
     def is_inter_node(self, num_gpus: int) -> bool:
         """
@@ -3116,6 +3128,18 @@ class PerfDatabase:
         """
         if quant_mode == common.GEMMQuantMode.fp8_static:
             return common.GEMMQuantMode.fp8
+        return quant_mode
+
+    @staticmethod
+    def _normalize_moe_quant_mode_for_table(quant_mode: common.MoEQuantMode) -> common.MoEQuantMode:
+        """
+        Normalize MoE quant modes for perf table lookup.
+
+        `w4a16_mxfp4` has compute factor 1 (same as float16) and reuses
+        `float16` MoE perf tables for computation estimation.
+        """
+        if quant_mode == common.MoEQuantMode.w4a16_mxfp4:
+            return common.MoEQuantMode.float16
         return quant_mode
 
     @functools.lru_cache(maxsize=32768)
@@ -4542,6 +4566,11 @@ class PerfDatabase:
 
         if database_mode is None:
             database_mode = self._default_database_mode
+
+        # Normalize quant mode for perf table lookup (e.g. w4a16_mxfp4 -> float16).
+        # SOL/empirical calculations use the original quant_mode for correct memory/compute factors.
+        table_quant_mode = self._normalize_moe_quant_mode_for_table(quant_mode)
+
         if database_mode == common.DatabaseMode.SOL:
             sol_latency = get_sol(
                 num_tokens,
@@ -4603,9 +4632,9 @@ class PerfDatabase:
                         )
 
                     used_workload_distribution = (
-                        workload_distribution if workload_distribution in moe_data[quant_mode] else "uniform"
+                        workload_distribution if workload_distribution in moe_data[table_quant_mode] else "uniform"
                     )
-                    moe_dict = moe_data[quant_mode][used_workload_distribution][topk][num_experts][hidden_size][
+                    moe_dict = moe_data[table_quant_mode][used_workload_distribution][topk][num_experts][hidden_size][
                         inter_size
                     ][moe_tp_size][moe_ep_size]
                     num_left, num_right = self._nearest_1d_point_helper(
@@ -4637,37 +4666,37 @@ class PerfDatabase:
                     if (
                         num_tokens <= 128
                         and self._moe_low_latency_data
-                        and quant_mode == common.MoEQuantMode.nvfp4
+                        and table_quant_mode == common.MoEQuantMode.nvfp4
                         and is_gated
                     ):
                         try:
                             used_workload_distribution = (
                                 workload_distribution
-                                if workload_distribution in self._moe_low_latency_data[quant_mode]
+                                if workload_distribution in self._moe_low_latency_data[table_quant_mode]
                                 else "uniform"
                             )
-                            moe_dict = self._moe_low_latency_data[quant_mode][used_workload_distribution][topk][
+                            moe_dict = self._moe_low_latency_data[table_quant_mode][used_workload_distribution][topk][
                                 num_experts
                             ][hidden_size][inter_size][moe_tp_size][moe_ep_size]
                             logger.debug(
-                                f"trying to find low latency data for moe {quant_mode} "
+                                f"trying to find low latency data for moe {table_quant_mode} "
                                 f"{workload_distribution} {topk} {num_experts} {hidden_size} "
                                 f"{inter_size} {moe_tp_size} {moe_ep_size} but failed."
                             )
                         except:
                             used_workload_distribution = (
                                 workload_distribution
-                                if workload_distribution in self._moe_data[quant_mode]
+                                if workload_distribution in self._moe_data[table_quant_mode]
                                 else "uniform"
                             )
-                            moe_dict = self._moe_data[quant_mode][used_workload_distribution][topk][num_experts][
+                            moe_dict = self._moe_data[table_quant_mode][used_workload_distribution][topk][num_experts][
                                 hidden_size
                             ][inter_size][moe_tp_size][moe_ep_size]
                     else:
                         used_workload_distribution = (
-                            workload_distribution if workload_distribution in self._moe_data[quant_mode] else "uniform"
+                            workload_distribution if workload_distribution in self._moe_data[table_quant_mode] else "uniform"
                         )
-                        moe_dict = self._moe_data[quant_mode][used_workload_distribution][topk][num_experts][
+                        moe_dict = self._moe_data[table_quant_mode][used_workload_distribution][topk][num_experts][
                             hidden_size
                         ][inter_size][moe_tp_size][moe_ep_size]
 
@@ -4696,9 +4725,9 @@ class PerfDatabase:
                             "Please use HYBRID or EMPIRICAL database mode, or provide the data file."
                         )
                     used_workload_distribution = (
-                        workload_distribution if workload_distribution in self._moe_data[quant_mode] else "uniform"
+                        workload_distribution if workload_distribution in self._moe_data[table_quant_mode] else "uniform"
                     )
-                    moe_dict = self._moe_data[quant_mode][used_workload_distribution][topk][num_experts][hidden_size][
+                    moe_dict = self._moe_data[table_quant_mode][used_workload_distribution][topk][num_experts][hidden_size][
                         inter_size
                     ][moe_tp_size][moe_ep_size]
                     num_left, num_right = self._nearest_1d_point_helper(
