@@ -137,6 +137,7 @@ def cli_default(
     prefix: int = 0,
     top_n: int = 5,
     save_dir: str | None = None,
+    max_concurrency: int | None = None,
 ) -> CLIResult:
     """
     Run the default CLI mode: compare aggregated vs disaggregated serving.
@@ -163,6 +164,8 @@ def cli_default(
         prefix: Prefix cache length. Default is 0.
         top_n: Number of top configurations to return for each mode (agg/disagg). Default is 5.
         save_dir: Directory to save results. If None, results are not saved to disk.
+        max_concurrency: Maximum concurrency (batch size) for config search.
+            Limits the batch-size sweep to at most this value. Default is None (no limit).
 
     Returns:
         CLIResult with chosen experiment, best configs, pareto fronts, and throughputs.
@@ -205,6 +208,7 @@ def cli_default(
         tpot=tpot,
         request_latency=request_latency,
         prefix=prefix,
+        max_concurrency=max_concurrency,
     )
 
     result = _execute_and_wrap_result(task_configs, mode="default", top_n=top_n)
