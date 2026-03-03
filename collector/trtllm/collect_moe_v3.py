@@ -106,7 +106,7 @@ def get_moe_test_cases():
             ]
 
     if get_sm_version() >= 100:
-        moe_list += ["nvfp4"]
+        moe_list += ["nvfp4", "w4a16_mxfp4"]
 
     test_cases = []
 
