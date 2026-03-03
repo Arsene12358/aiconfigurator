@@ -25,7 +25,7 @@
 # cli
 /src/aiconfigurator/cli @Ethan-ES @tianhaox @jasonqinzhou @Arsene12358 @simone-chen @harrilee @ilyasher
 
-# eval
+# eval (DEPRECATED — module scheduled for removal)
 /src/aiconfigurator/eval @Ethan-ES @tianhaox @jasonqinzhou @Arsene12358 @simone-chen @harrilee @ilyasher
 
 # webapp

@@ -1,6 +1,8 @@
 
 # Automation: build + deploy + evaluate
 
+> **Deprecated**: The eval pipeline (`aiconfigurator eval`) and this automation script (`launch_eval.sh`) are deprecated and will be removed in a future release. Please migrate to the standalone benchmarking and deployment tooling.
+
 This folder contains `launch_eval.sh`, a script that:
 
 * downloads model weights (optional),

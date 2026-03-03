@@ -10,6 +10,16 @@ set -euo pipefail
 # The config file is a simple VAR=VALUE list.
 # ------------------------------------------------------------
 
+# ---------- deprecation notice ----------
+echo "" >&2
+echo "╔══════════════════════════════════════════════════════════════════════╗" >&2
+echo "║  DEPRECATED: launch_eval.sh and 'aiconfigurator eval' are          ║" >&2
+echo "║  deprecated and will be removed in a future release.               ║" >&2
+echo "║  Please migrate to the standalone benchmarking and deployment      ║" >&2
+echo "║  tooling.                                                          ║" >&2
+echo "╚══════════════════════════════════════════════════════════════════════╝" >&2
+echo "" >&2
+
 # ---------- utils ----------
 log()  { echo "[INFO ] $*" >&2; }
 warn() { echo "[WARN ] $*" >&2; }

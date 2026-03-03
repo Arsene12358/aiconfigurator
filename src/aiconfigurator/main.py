@@ -4,14 +4,18 @@
 import argparse
 import logging
 import sys
+import warnings
 
 from aiconfigurator import __version__
 from aiconfigurator.cli.main import configure_parser as configure_cli_parser
 from aiconfigurator.cli.main import main as cli_main
-from aiconfigurator.eval.main import configure_parser as configure_eval_parser
-from aiconfigurator.eval.main import main as eval_main
 from aiconfigurator.generator.api import generator_cli_helper
 from aiconfigurator.logging_utils import setup_logging
+
+_EVAL_DEPRECATION_MSG = (
+    "The 'aiconfigurator eval' command is deprecated and will be removed in a future release. "
+    "Please migrate to the standalone benchmarking and deployment tooling."
+)
 
 
 def _is_gradio_importable() -> bool:
@@ -53,6 +57,12 @@ def _run_cli(extra_args: list[str]) -> None:
 
 
 def _run_eval(extra_args: list[str]) -> None:
+    warnings.warn(_EVAL_DEPRECATION_MSG, DeprecationWarning, stacklevel=2)
+    logging.getLogger(__name__).warning(_EVAL_DEPRECATION_MSG)
+
+    from aiconfigurator.eval.main import configure_parser as configure_eval_parser
+    from aiconfigurator.eval.main import main as eval_main
+
     eval_parser = argparse.ArgumentParser(description="Generate config -> Launch Service -> Benchmarking -> Analysis")
     configure_eval_parser(eval_parser)
     eval_args = eval_parser.parse_args(extra_args)
@@ -78,9 +88,9 @@ def main(argv: list[str] | None = None) -> None:
     webapp_parser = subparsers.add_parser("webapp", help=webapp_help, add_help=False)
     webapp_parser.set_defaults(handler=_run_webapp)
 
-    # Eval subcommand
+    # Eval subcommand (deprecated)
     eval_parser = subparsers.add_parser(
-        "eval", help="Generate config -> Launch Service -> Benchmarking -> Analysis", add_help=False
+        "eval", help="[DEPRECATED] Generate config -> Launch Service -> Benchmarking -> Analysis", add_help=False
     )
     eval_parser.set_defaults(handler=_run_eval)
 

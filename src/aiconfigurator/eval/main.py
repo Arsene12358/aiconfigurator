@@ -3,9 +3,15 @@
 
 import argparse
 import logging
+import warnings
 from datetime import datetime
 
 LOG = logging.getLogger(__name__)
+
+_DEPRECATION_MSG = (
+    "The 'aiconfigurator eval' command is deprecated and will be removed in a future release. "
+    "Please migrate to the standalone benchmarking and deployment tooling."
+)
 
 
 def configure_parser(parser: argparse.ArgumentParser) -> None:
@@ -90,6 +96,9 @@ def configure_parser(parser: argparse.ArgumentParser) -> None:
 
 
 def main(args) -> int:
+    warnings.warn(_DEPRECATION_MSG, DeprecationWarning, stacklevel=2)
+    LOG.warning(_DEPRECATION_MSG)
+
     if not getattr(args, "save_dir", None):
         LOG.error("--save-dir is required for eval")
         return 2
