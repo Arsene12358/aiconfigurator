@@ -282,21 +282,6 @@ Use `--generator-config path/to/file.yaml` to load a YAML payload with `ServiceC
 
 Run `aiconfigurator cli default --generator-help` to print information that is sourced directly from `src/aiconfigurator/generator/config/deployment_config.yaml` and `backend_config_mapping.yaml`. 
 
-### All-in-one automation (Deprecated)
-
-> **Deprecated**: The `aiconfigurator eval` command and the `launch_eval.sh` automation script are deprecated and will be removed in a future release. Please migrate to the standalone benchmarking and deployment tooling.
-
-<details>
-<summary>Legacy usage (click to expand)</summary>
-
-To further simplify the end-to-end user experience, we previously supported automating everything in one script, starting from configuring the deployment, generating the configs, preparing docker image and container, pulling model checkpoints, deploying the service, benchmarking and summarizing.
-```bash
-  bash launch_eval.sh config.env
-```
-Refer to [Automation](tools/automation/README.md) for more details.
-
-</details>
-
 ## Webapp
 
 ```bash

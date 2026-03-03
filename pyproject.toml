@@ -51,8 +51,6 @@ dependencies = [
     "pyyaml>=6.0",
     "scipy>=1.13.1",
     "tqdm>=4.0.0",
-    "bokeh",
-    "nvidia-ml-py",
     "munch>=4.0.0"
 ]
 

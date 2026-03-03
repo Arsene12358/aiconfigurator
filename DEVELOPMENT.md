@@ -129,10 +129,6 @@ Before contributing, please read:
 
 Refer to [How to Add a New Model](docs/add_a_new_model.md).
 
-### Running Automation Scripts
-
-Refer to the [Automation README](tools/automation/README.md).
-
 ## Getting Help
 
 - **Documentation**: Check the `docs/` directory

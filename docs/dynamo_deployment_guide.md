@@ -11,10 +11,6 @@ Take [qwen3-32b-fp8](https://huggingface.co/Qwen/Qwen3-32B-FP8) model as an exam
 
 > Currently auto configuration / script generation only support trtllm backend
 
-# All-in-one Automation process
-
-we're now supporting automate everything in one script, starting from configuring the deployment, generating the configs, preparing docker image and container, pulling model checkpoints, deploying the service, benchmarking and summarizing. Refer to [Automation](../tools/automation/README.md) for more details.
-
 # Step-by-step Manual Deployment and Performance Alignment
 
 ## Methodology
