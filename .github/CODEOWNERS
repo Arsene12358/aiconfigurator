@@ -25,9 +25,6 @@
 # cli
 /src/aiconfigurator/cli @Ethan-ES @tianhaox @jasonqinzhou @Arsene12358 @simone-chen @harrilee @ilyasher
 
-# eval
-/src/aiconfigurator/eval @Ethan-ES @tianhaox @jasonqinzhou @Arsene12358 @simone-chen @harrilee @ilyasher
-
 # webapp
 /src/aiconfigurator/webapp @tianhaox @jasonqinzhou @Arsene12358 @Harrilee @simone-chen @harrilee @ilyasher
 /src/aiconfigurator/webapp/components/profiling @Harrilee @tianhaox @jasonqinzhou @Arsene12358 @simone-chen @harrilee @ilyasher
@@ -71,7 +68,7 @@
 # tools
 /tools @tianhaox @jasonqinzhou @Arsene12358 @simone-chen @harrilee @ilyasher
 /tools/generator_validator @Ethan-ES @jasonqinzhou @Arsene12358 @simone-chen
-/tools/automation @tianhaox @Ethan-ES @jasonqinzhou @Arsene12358 @simone-chen
+/tools/automation @tianhaox @jasonqinzhou @Arsene12358 @simone-chen
 /tools/sanity_check @tianhaox @YijiaZhao @jasonqinzhou @Arsene12358 @simone-chen
 /tools/simple_sdk_demo @tianhaox @jasonqinzhou @Arsene12358 @simone-chen
 /tools/support_matrix/generate_support_matrix.py @Harrilee @tianhaox @jasonqinzhou @Arsene12358 @simone-chen
